@@ -1,6 +1,7 @@
 const state = { data: null };
 
 let barChart = null;
+let lineChart = null;
 
 const renderBarChart = (data) => {
   if (barChart === null) {
@@ -17,6 +18,32 @@ const renderBarChart = (data) => {
       type: 'bar',
       data: s.counts
     }))
+  });
+};
+
+// 第三步新增：折线图渲染函数
+const renderLineChart = (data) => {
+  if (lineChart !== null) {
+    lineChart.destroy(); // 防止重复初始化
+  }
+  const ctx = document.querySelector('#line-chart');
+  lineChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: data.months,
+      datasets: data.series.map(s => ({
+        label: s.category,
+        data: s.counts,
+        borderWidth: 1
+      }))
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        title: { display: true, text: '借阅趋势（单位：册）' }
+      }
+    }
   });
 };
 
@@ -37,7 +64,7 @@ const loadData = async () => {
     $('#status').hide();
     renderCards(data);
     renderBarChart(data);
-    // renderLineChart(data); // 第三步代码，暂时注释
+    renderLineChart(data); // 第三步打开，启用折线图
   } catch (error) {
     $('#status').text('加载失败：' + error.message).show();
   }
@@ -60,5 +87,11 @@ const renderCards = (data) => {
     `);
   });
 };
+
+// 第三步新增：窗口大小变化，让两个图表自动resize
+window.addEventListener('resize', () => {
+  if(barChart) barChart.resize();
+  if(lineChart) lineChart.resize();
+});
 
 loadData();
