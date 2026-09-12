@@ -1,62 +1,56 @@
-const state = { data: null };
+// 获取页面元素
+const statusText = document.getElementById('status');
+const cardContainer = document.getElementById('cards');
 
-let pieChart = null;
-let trendChart = null;
+// 页面加载，显示加载提示
+statusText.textContent = "加载中...";
 
-// 饼图 第2次提交实现，现在占位
-const renderPieChart = () => {};
-// 折线图 第3次提交实现，现在占位
-const renderTrendChart = () => {};
-
-const loadData = async () => {
-  $('#status').text('加载中...').show();
-  try {
-    const resp = await fetch('data/consume.json');
-    if (!resp.ok) throw new Error('HTTP ' + resp.status);
-    const data = await resp.json();
-
-    if(data.series.length === 0){
-      $('#status').text('暂无数据').show();
-      return;
-    }
-
-    state.data = data;
-    $('#sub-title').text(data.title + "｜数据来源：" + data.source);
-    $('#status').hide();
-
+// 读取本地json数据
+fetch('data/consume.json')
+.then(res => res.json())
+.then(data => {
+    statusText.style.display = "none";
     renderCards(data);
-    renderPieChart(data);
-    renderTrendChart(data);
-  } catch (err) {
-    $('#status').text("加载失败：" + err.message).show();
-  }
-};
+    renderPie(data);
+})
+.catch(err => {
+    statusText.textContent = "数据加载失败";
+    console.error(err);
+})
 
-const renderCards = (data) => {
-  $('#cards').empty();
-  data.series.forEach(item=>{
-    const total = item.counts.reduce((sum,val)=>sum+val,0);
-    $('#cards').append(`
-      <div class="col-md-3">
-        <div class="card">
-          <div class="card-body">
-            <h5 class="card-title h6">${item.category}</h5>
-            <p class="card-text fs-4">${total} 元</p >
-            <p class="small text-muted">4个月总消费</p >
-          </div>
-        </div>
-      </div>
-    `);
-  })
-};
+// 渲染卡片
+function renderCards(data){
+    data.forEach(item => {
+        const cardDiv = $(`<div class="card">
+            <h4>${item.name}</h4>
+            <p>${item.money} 元</p >
+            <p>4个月总消费</p >
+        </div>`);
+        // 点击卡片高亮
+        cardDiv.click(function(){
+            $(this).toggleClass("card-highlight");
+        })
+        cardContainer.appendChild(cardDiv[0]);
+    })
+}
 
-// jQuery交互：点击卡片切换高亮样式
-$('#cards').on('click','.card',function(){
-  $(this).toggleClass('card-highlight');
-});
+// 新增：渲染饼图（第二步核心新增代码）
+function renderPie(data){
+    const pieDom = document.getElementById('pie-chart');
+    const myChart = echarts.init(pieDom);
+    const pieData = data.map(item=>{
+        return {name:item.name, value:item.money}
+    })
+    const option = {
+        title:{text:"消费分类占比"},
+        series: [{
+            type: 'pie',
+            radius:'60%',
+            data: pieData
+        }]
+    };
+    myChart.setOption(option);
+}
 
-window.addEventListener('resize',()=>{
-  if(pieChart) pieChart.resize();
-});
-
-loadData();
+// 折线图暂时还是空函数，第三步再写
+function renderLine(){}
