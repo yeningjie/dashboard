@@ -1,5 +1,25 @@
 const state = { data: null };
 
+let barChart = null;
+
+const renderBarChart = (data) => {
+  if (barChart === null) {
+    barChart = echarts.init(document.querySelector('#bar-chart'));
+  }
+  barChart.setOption({
+    title: { text: '各月各品类借阅量', left: 'center' },
+    tooltip: { trigger: 'axis' },
+    legend: { bottom: 0 },
+    xAxis: { data: data.months },
+    yAxis: { name: '册' },
+    series: data.series.map(s => ({
+      name: s.category,
+      type: 'bar',
+      data: s.counts
+    }))
+  });
+};
+
 const loadData = async () => {
   $('#status').text('加载中...').show();
   try {
@@ -17,7 +37,7 @@ const loadData = async () => {
     $('#status').hide();
     renderCards(data);
     renderBarChart(data);
-    renderLineChart(data);
+    // renderLineChart(data); // 第三步代码，暂时注释
   } catch (error) {
     $('#status').text('加载失败：' + error.message).show();
   }
@@ -40,58 +60,5 @@ const renderCards = (data) => {
     `);
   });
 };
-
-let barChart = null;
-const renderBarChart = (data) => {
-  if (barChart === null) {
-    barChart = echarts.init(document.querySelector('#bar-chart'));
-  }
-  barChart.setOption({
-    title: { text: '各月各品类借阅量', left: 'center' },
-    tooltip: { trigger: 'axis' },
-    legend: { bottom: 0 },
-    xAxis: { data: data.months },
-    yAxis: { name: '册' },
-    series: data.series.map(s => ({
-      name: s.category,
-      type: 'bar',
-      data: s.counts
-    }))
-  });
-};
-
-let lineChart = null;
-const renderLineChart = (data) => {
-  if (lineChart !== null) {
-    lineChart.destroy();
-  }
-  const ctx = document.querySelector('#line-chart');
-  lineChart = new Chart(ctx, {
-    type: 'line',
-    data: {
-      labels: data.months,
-      datasets: data.series.map(s => ({
-        label: s.category,
-        data: s.counts,
-        borderWidth: 1
-      }))
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        title: { display: true, text: '借阅趋势（单位：册）' }
-      }
-    }
-  });
-};
-
-window.addEventListener('resize', () => {
-  if (barChart) barChart.resize();
-});
-
-$('#cards').on('click', '.card', function () {
-  $(this).toggleClass('border-primary shadow');
-});
 
 loadData();
